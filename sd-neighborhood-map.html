@@ -3,44 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Downtown San Diego Neighborhood Finder</title>
+    <title>DCPC-Map</title>
     
-    <!-- This loads the Leaflet mapping library's styles -->
+    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
     
     <style>
-        /* Basic page layout styles */
         body {
             margin: 0;
             padding: 0;
             font-family: Arial, sans-serif;
         }
         
-        /* Make the map take up most of the screen */
         #map {
             height: 80vh;
             width: 100%;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
         }
         
-        /* Style the search area at the top */
         .search-container {
             padding: 20px;
             background: #f8f9fa;
+            border-bottom: 1px solid #ddd;
         }
         
-        /* Style the address input box */
         #address-input {
             padding: 10px;
             width: 300px;
             margin-right: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
         }
         
-        /* Style the search button */
         #search-btn {
             padding: 10px 20px;
             background: #007bff;
             color: white;
             border: none;
+            border-radius: 4px;
             cursor: pointer;
             transition: background-color 0.3s;
         }
@@ -54,13 +55,11 @@
             cursor: not-allowed;
         }
         
-        /* Style the results area */
         #result {
             padding: 20px;
             font-size: 16px;
         }
         
-        /* Different message types */
         .error {
             color: #dc3545;
         }
@@ -73,59 +72,79 @@
             color: #6c757d;
         }
 
-        /* Style the map legend */
-        .legend {
-            padding: 6px 8px;
-            background: white;
-            background: rgba(255, 255, 255, 0.8);
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
-            border-radius: 5px;
-            line-height: 24px;
+        .map-container {
+            padding: 20px;
         }
 
-        .legend i {
-            width: 18px;
-            height: 18px;
-            float: left;
-            margin-right: 8px;
-            opacity: 0.7;
+        h1 {
+            padding: 20px;
+            margin: 0;
+            background: #fff;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .description {
+            padding: 0 20px;
+            color: #666;
         }
     </style>
 </head>
 <body>
-    <!-- Search interface -->
+    <h1>DCPC-Map</h1>
+    <p class="description">Interactive map to lookup which DCPC district you are located in.</p>
+    
     <div class="search-container">
         <input type="text" 
                id="address-input" 
                placeholder="Enter an address in Downtown San Diego (e.g., 750 B Street)">
-        <button id="search-btn">Find Neighborhood</button>
+        <button id="search-btn">Find District</button>
     </div>
     
-    <!-- Map container -->
-    <div id="map"></div>
-    <!-- Results display area -->
+    <div class="map-container">
+        <div id="map"></div>
+    </div>
     <div id="result"></div>
 
-    <!-- Load the Leaflet mapping library -->
+    <!-- Leaflet JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
     
-    <!-- Load our neighborhood data -->
-    <script src="neighborhoods.js"></script>
-    
     <script>
-        // Initialize our main variables
+        // Initialize map variables
         let map, marker;
         let searchInProgress = false;
         
-        // Create the map centered on Downtown San Diego
+        // Sample GeoJSON data - replace this with your actual data
+        const neighborhoods = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "name": "Sample District"
+                    },
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [-117.161, 32.710],
+                            [-117.156, 32.710],
+                            [-117.156, 32.715],
+                            [-117.161, 32.715],
+                            [-117.161, 32.710]
+                        ]]
+                    }
+                }
+            ]
+        };
+        
+        // Initialize the map centered on Downtown San Diego
         map = L.map('map').setView([32.715736, -117.161087], 14);
 
-        // Add the OpenStreetMap background layer
+        // Add OpenStreetMap tiles
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
 
-        // Create unique colors for each neighborhood
+        // Function to generate a color based on district name
         function getColor(name) {
             let hash = 0;
             for (let i = 0; i < name.length; i++) {
@@ -135,7 +154,7 @@
             return `hsl(${h}, 50%, 70%)`;
         }
 
-        // Add our neighborhood boundaries to the map
+        // Add neighborhoods to the map
         const neighborhoodLayer = L.geoJSON(neighborhoods, {
             style: function(feature) {
                 return {
@@ -147,14 +166,11 @@
                 };
             },
             onEachFeature: function(feature, layer) {
-                // Create popup content for each neighborhood
                 const popupContent = `
-                    <strong>${feature.properties.name}</strong><br>
-                    ${feature.properties.description || ''}
+                    <strong>${feature.properties.name}</strong>
                 `;
                 layer.bindPopup(popupContent);
 
-                // Add hover effects
                 layer.on({
                     mouseover: function(e) {
                         const layer = e.target;
@@ -170,30 +186,7 @@
             }
         }).addTo(map);
 
-        // Create the legend showing neighborhood names and colors
-        const legend = L.control({position: 'bottomright'});
-        legend.onAdd = function(map) {
-            const div = L.DomUtil.create('div', 'legend');
-            const neighborhoods = [];
-            
-            neighborhoodLayer.eachLayer(function(layer) {
-                const name = layer.feature.properties.name;
-                if (!neighborhoods.includes(name)) {
-                    neighborhoods.push(name);
-                }
-            });
-            
-            div.innerHTML = '<h4>Neighborhoods</h4>';
-            neighborhoods.forEach(name => {
-                div.innerHTML += 
-                    `<i style="background:${getColor(name)}"></i>${name}<br>`;
-            });
-            
-            return div;
-        };
-        legend.addTo(map);
-
-        // Function to find which neighborhood contains a given point
+        // Function to find which district contains a point
         function findNeighborhood(lat, lng) {
             let point = L.latLng(lat, lng);
             let containingNeighborhood = null;
@@ -207,7 +200,7 @@
             return containingNeighborhood;
         }
 
-        // Function to convert addresses to coordinates using OpenStreetMap
+        // Function to geocode address using Nominatim
         async function geocodeAddress(address) {
             const searchAddress = `${address}, San Diego, CA`;
             const encodedAddress = encodeURIComponent(searchAddress);
@@ -236,7 +229,7 @@
             }
         }
 
-        // Handle what happens when someone clicks the search button
+        // Handle the search functionality
         document.getElementById('search-btn').addEventListener('click', async function() {
             const button = this;
             const resultDiv = document.getElementById('result');
@@ -268,9 +261,9 @@
                 const neighborhood = findNeighborhood(coordinates.lat, coordinates.lng);
                 
                 if (neighborhood) {
-                    resultDiv.innerHTML = `<span class="success">This address is in the ${neighborhood} neighborhood.</span>`;
+                    resultDiv.innerHTML = `<span class="success">This address is in the ${neighborhood} district.</span>`;
                 } else {
-                    resultDiv.innerHTML = `<span class="error">This location is not within any known Downtown San Diego neighborhood.</span>`;
+                    resultDiv.innerHTML = `<span class="error">This location is not within any known DCPC district.</span>`;
                 }
                 
             } catch (error) {
@@ -281,7 +274,7 @@
             }
         });
 
-        // Allow the Enter key to trigger a search
+        // Add enter key support for the input field
         document.getElementById('address-input').addEventListener('keypress', function(e) {
             if (e.key === 'Enter' && !searchInProgress) {
                 document.getElementById('search-btn').click();
