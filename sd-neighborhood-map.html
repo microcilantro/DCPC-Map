@@ -108,16 +108,29 @@
     <!-- Leaflet JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
     
-    <!-- Load GeoJSON data -->
-    <script src="districts.js"></script>
-    
     <script>
         // Initialize map variables
         let map, marker;
         let searchInProgress = false;
-        
-        // Use the districts data loaded from districts.js
-        const neighborhoods = districts;
+        let neighborhoods;
+
+        // Fetch and load the GeoJSON data
+        async function loadDistrictData() {
+            try {
+                const response = await fetch('districts.geojson');
+                if (!response.ok) {
+                    throw new Error('Failed to load district data');
+                }
+                neighborhoods = await response.json();
+                
+                // Add neighborhoods to the map once data is loaded
+                initializeNeighborhoodLayer();
+            } catch (error) {
+                console.error('Error loading district data:', error);
+                document.getElementById('result').innerHTML = 
+                    '<span class="error">Error loading district data. Please try refreshing the page.</span>';
+            }
+        }
         
         // Initialize the map centered on Downtown San Diego
         map = L.map('map').setView([32.715736, -117.161087], 14);
@@ -137,8 +150,11 @@
             return `hsl(${h}, 50%, 70%)`;
         }
 
-        // Add neighborhoods to the map
-        const neighborhoodLayer = L.geoJSON(neighborhoods, {
+        // Function to initialize the neighborhood layer
+        let neighborhoodLayer;
+        
+        function initializeNeighborhoodLayer() {
+            neighborhoodLayer = L.geoJSON(neighborhoods, {
             style: function(feature) {
                 return {
                     fillColor: getColor(feature.properties.name),
@@ -263,6 +279,9 @@
                 document.getElementById('search-btn').click();
             }
         });
+
+        // Load the district data when the page loads
+        loadDistrictData();
     </script>
 </body>
 </html>
