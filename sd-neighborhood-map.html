@@ -116,28 +116,8 @@
         let map, marker;
         let searchInProgress = false;
         
-        // Sample GeoJSON data - replace this with your actual data
-        const neighborhoods = {
-            "type": "FeatureCollection",
-            "features": [
-                {
-                    "type": "Feature",
-                    "properties": {
-                        "name": "Sample District"
-                    },
-                    "geometry": {
-                        "type": "Polygon",
-                        "coordinates": [[
-                            [-117.161, 32.710],
-                            [-117.156, 32.710],
-                            [-117.156, 32.715],
-                            [-117.161, 32.715],
-                            [-117.161, 32.710]
-                        ]]
-                    }
-                }
-            ]
-        };
+        // Use the districts data loaded from districts.js
+        const neighborhoods = districts;
         
         // Initialize the map centered on Downtown San Diego
         map = L.map('map').setView([32.715736, -117.161087], 14);
@@ -283,9 +263,6 @@
                 document.getElementById('search-btn').click();
             }
         });
-    </script>
-</body>
-</html>
     </script>
 </body>
 </html>
